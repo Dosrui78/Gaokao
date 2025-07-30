@@ -5,6 +5,8 @@ import time
 import random
 from pymongo import UpdateMany
 from datetime import datetime
+from prefect import flow, task
+from prefect.logging import get_run_logger
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.configs import HOST
@@ -19,9 +21,11 @@ class SchoolInfo:
         self.mongo_pool = MongoPool("schoolInfo")
         self.headers = {"User-Agent": UserAgent(), "Referer": HOST}
 
+    @flow(name="school_info")
     def get_school_info(self):
         page = 1
         update_list = []
+        logger = get_run_logger()
         url = "https://api.zjzw.cn/web/api/"
         params = {
             "keyword": "",

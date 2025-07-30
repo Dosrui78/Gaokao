@@ -1,0 +1,30 @@
+# generic metadata
+prefect-version: null
+name: null
+
+# preparation steps
+build: null
+push: null
+
+# runtime steps
+pull: null
+
+# deployment configurations
+deployments:
+- # base metadata
+  name: school_info
+  version: 1.0.0
+  tags: []
+  description: "Get School Info"
+  schedule:
+    - cron: "35 1 * * * "
+      slug: "school_info"
+
+  # flow-specific fields
+  entrypoint: school_info.py:get_school_info
+
+  # infra-specific fields
+  work_pool:
+    name: gaokao_pool
+    work_queue_name: gaokao
+    job_variables: {}
