@@ -1,6 +1,8 @@
 import os
 import sys
 import json
+import time
+import random
 from pymongo import UpdateMany
 from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -9,6 +11,7 @@ from config.configs import HOST
 from lib.logger import logger
 from lib.header import UserAgent
 from lib.mongo_pool import MongoPool
+from lib.proxies_pool import get_proxies
 from lib.base_requests import base_requests
 
 class SchoolInfo:
@@ -47,9 +50,9 @@ class SchoolInfo:
 
         while True:
             try:
-                response = base_requests(url, method="POST", headers=self.headers, params=params, data=data)
+                response = base_requests(url, method="POST", headers=self.headers, params=params, data=data, proxies=get_proxies())
                 data_json = json.loads(response.text)
-                if data_json.get("total") == 0 or isinstance(data_json.get("data"), str):
+                if data_json.get("total") == 0 or isinstance(data_json.get("data"), str) or data_json.get("data", {}).get("item") == []:
                     logger.info("数据获取为空，结束循环！！")
                     break
                 if data_json.get("code") == "0000":
@@ -69,6 +72,7 @@ class SchoolInfo:
                 page += 1
                 params["page"] = str(page)
                 data["page"] = page
+                time.sleep(random.uniform(1.2, 3.2))
 
 if __name__ == "__main__":
     school_info = SchoolInfo()
