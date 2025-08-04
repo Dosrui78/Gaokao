@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import random
+import urllib3
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed, wait_random, retry_if_result
 from curl_cffi import requests as ja3requests
@@ -8,6 +9,7 @@ from lib.logger import logger
 
 chrome_list = ["edge99", "edge101", "chrome99", "chrome100", "chrome101", "chrome104", "chrome107", "chrome110", "chrome99_android", "safari15_3", "safari15_5"]
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 def custom_retry_by_result(response: requests.Response) -> bool:
     if response is None or response.status_code != 200:
         return True

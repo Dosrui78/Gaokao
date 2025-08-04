@@ -12,16 +12,16 @@ pull: null
 # deployment configurations
 deployments:
 - # base metadata
-  name: school_info
   version: 1.0.0
+  name: school_info
   tags: []
   description: "Get School Info"
   schedule:
-    - cron: "35 1 * * * "
+    - cron: "0 23 * * * "
       slug: "school_info"
 
   # flow-specific fields
-  entrypoint: school_info.py:get_school_info
+  entrypoint: start.py:main
 
   # infra-specific fields
   work_pool:
