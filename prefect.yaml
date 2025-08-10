@@ -28,3 +28,8 @@ deployments:
     name: gaokao_pool
     work_queue_name: gaokao
     job_variables: {}
+
+  source:
+   type: git
+   url: "https://github.com/Dosrui78/Gaokao.git"
+   reference: "main"
