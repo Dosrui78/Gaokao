@@ -26,7 +26,6 @@ class SchoolInfo:
     @task(name="get_school_info", cache_policy=NO_CACHE)
     def get_school_info(self):
         page = 1
-        total_page = 1
         update_list = []
         logger = get_run_logger()
         url = "https://api.zjzw.cn/web/api/"
@@ -59,13 +58,16 @@ class SchoolInfo:
             try:
                 response = base_requests(url, method="POST", headers=self.headers, params=params, data=data, proxies=get_proxies())
                 data_json = json.loads(response.text)
-                if data_json.get("total") == 0 or isinstance(data_json.get("data"), str) or data_json.get("data", {}).get("item") == [] or page == total_page:
+                if data_json.get("total") == 0 or isinstance(data_json.get("data"), str) or data_json.get("data", {}).get("item") == []:
                     logger.info("数据获取为空，结束循环！！")
                     break
                 if data_json.get("code") == "0000":
                     item = data_json.get("data").get("item")
                     all_num = data_json.get("data").get("numFound")
                     total_page = math.ceil(all_num / 50)
+                    if page == total_page:
+                        logger.info("数据获取完成，结束循环！！")
+                        break
                     for i in item:
                         i["update_time"] = datetime.now()
                         update_operation = UpdateMany({"school_id": i["school_id"]}, {"$set": i}, upsert=True)
