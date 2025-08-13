@@ -99,20 +99,19 @@ class ScoreInfo:
             time.sleep(random.uniform(1.1, 2.1))
 
     def main(self):
-        while True:
-            tasks = self.get_tasks()
-            if not tasks:
-                self.logger("任务全部完成！！！")
-                break
-            for task in tasks:
-                school_id = task["school_id"]
-                name = task["name"]
-                year_and_province = self.get_year_and_province(school_id)
-                if year_and_province:
-                    for province_id, year_list in year_and_province.items():
-                        for year in year_list:
-                            self.get_score_info.with_options(name=f"get_score_info_{school_id}")(school_id, province_id, year, name)
-                    self.task_mongo_pool.collection.update_one({"school_id": school_id}, {"$set": {"status": 1}})
+        tasks = self.get_tasks()
+        if not tasks:
+            self.logger.info("全部采集完成！！！")
+            return
+        for task in tasks:
+            school_id = task["school_id"]
+            name = task["name"]
+            year_and_province = self.get_year_and_province(school_id)
+            if year_and_province:
+                for province_id, year_list in year_and_province.items():
+                    for year in year_list:
+                        self.get_score_info.with_options(name=f"get_score_info_{school_id}")(school_id, province_id, year, name)
+                self.task_mongo_pool.collection.update_one({"school_id": school_id}, {"$set": {"status": 1}})
 
 if __name__ == "__main__":
     school_info = ScoreInfo()
