@@ -12,7 +12,7 @@ from prefect.cache_policies import NO_CACHE
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.configs import HOST
-from lib.logger import logger
+# from lib.logger import logger
 from lib.header import UserAgent
 from lib.mongo_pool import MongoPool
 from lib.proxies_pool import get_proxies
@@ -26,6 +26,7 @@ class SchoolInfo:
     @task(name="get_school_info", cache_policy=NO_CACHE)
     def get_school_info(self):
         page = 1
+        total_page = 1
         update_list = []
         logger = get_run_logger()
         url = "https://api.zjzw.cn/web/api/"
@@ -64,10 +65,7 @@ class SchoolInfo:
                 if data_json.get("code") == "0000":
                     item = data_json.get("data").get("item")
                     all_num = data_json.get("data").get("numFound")
-                    total_page = math.ceil(all_num / 50)
-                    if page == total_page:
-                        logger.info("数据获取完成，结束循环！！")
-                        break
+                    total_page = math.ceil(all_num / 30)
                     for i in item:
                         i["update_time"] = datetime.now()
                         update_operation = UpdateMany({"school_id": i["school_id"]}, {"$set": i}, upsert=True)
@@ -80,6 +78,9 @@ class SchoolInfo:
             except Exception as e:
                 logger.error(f"第{page}页数据获取失败，原因：{e}")
             finally:
+                if page == total_page:
+                    logger.info(f"达到最大页数——{total_page}，翻页结束！！")
+                    break
                 page += 1
                 params["page"] = str(page)
                 data["page"] = page

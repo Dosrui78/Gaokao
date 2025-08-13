@@ -11,7 +11,7 @@ chrome_list = ["edge99", "edge101", "chrome99", "chrome100", "chrome101", "chrom
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 def custom_retry_by_result(response: requests.Response) -> bool:
-    if response is None or response.status_code != 200:
+    if response is None or 200 < response.status_code < 300:
         return True
     else:
         return False

@@ -1,9 +1,11 @@
 from prefect import flow
 from src.school_info import SchoolInfo
+from src.school_special_score import ScoreInfo
 
-@flow(name="school_info_flow")
+@flow(name="school_score_flow")
 def main():
-    SchoolInfo().get_school_info()
+    # SchoolInfo().get_school_info()
+    ScoreInfo().main()
 
 if __name__ == "__main__":
     # main.deploy(

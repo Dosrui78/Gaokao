@@ -6,13 +6,12 @@ class MongoPool:
 
     def __new__(cls, collection_name):
         if collection_name not in cls._instances:
-            cls._instances = super().__new__(cls)
-            cls._instances.client = MongoClient(
-                MONGO_URL
-            )
-            cls._instances.db = cls._instances.client["gaokao"]
-            cls._instances.collection = cls._instances.db[collection_name]
-        return cls._instances
+            instance = super().__new__(cls)
+            instance.client = MongoClient(MONGO_URL)
+            instance.db = instance.client["gaokao"]
+            instance.collection = instance.db[collection_name]
+            cls._instances[collection_name] = instance
+        return cls._instances[collection_name]
 
     @classmethod
     def get_collection(cls, name):
