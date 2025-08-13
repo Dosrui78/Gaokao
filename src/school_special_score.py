@@ -48,7 +48,6 @@ class ScoreInfo:
         else:
             self.logger.error(f"获取年份和省份失败，原因：{data_json['message']}")
 
-    @task(name="get_score_info", cache_policy=NO_CACHE)
     def get_score_info(self, school_id: str, province_id: str, year: str, name: str):
         update_list = []
         temp_list = []
@@ -98,6 +97,15 @@ class ScoreInfo:
         finally:
             time.sleep(random.uniform(1.1, 2.1))
 
+    @task(name="get_score_info", cache_policy=NO_CACHE)
+    def get_score_info_by_school_id(self, school_id: str, name: str):
+        year_and_province = self.get_year_and_province(school_id)
+        if year_and_province:
+            for province_id, year_list in year_and_province.items():
+                for year in year_list:
+                    self.get_score_info(school_id, province_id, year, name)
+            self.task_mongo_pool.collection.update_one({"school_id": school_id}, {"$set": {"status": 1}})
+
     def main(self):
         tasks = self.get_tasks()
         if not tasks:
@@ -106,12 +114,8 @@ class ScoreInfo:
         for task in tasks:
             school_id = task["school_id"]
             name = task["name"]
-            year_and_province = self.get_year_and_province(school_id)
-            if year_and_province:
-                for province_id, year_list in year_and_province.items():
-                    for year in year_list:
-                        self.get_score_info.with_options(name=f"get_score_info_{school_id}")(school_id, province_id, year, name)
-                self.task_mongo_pool.collection.update_one({"school_id": school_id}, {"$set": {"status": 1}})
+            self.get_score_info_by_school_id.with_options(name=f"get_school_info_{school_id}")(school_id, name)
+
 
 if __name__ == "__main__":
     school_info = ScoreInfo()
