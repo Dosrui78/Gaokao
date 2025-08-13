@@ -13,12 +13,12 @@ pull: null
 deployments:
 - # base metadata
   version: 1.0.0
-  name: school_info
+  name: school_special_score
   tags: []
-  description: "Get School Info"
+  description: "Get School Special Score"
   schedule:
     - cron: "0 23 * * * "
-      slug: "school_info"
+      slug: "school_special_score"
       timezone: "Asia/Shanghai"
 
   # flow-specific fields
@@ -26,7 +26,7 @@ deployments:
 
   # infra-specific fields
   work_pool:
-    name: gaokao_process
+    name: gaokao_pool
     work_queue_name: gaokao
     job_variables: {}
 
