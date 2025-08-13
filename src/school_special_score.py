@@ -85,8 +85,8 @@ class ScoreInfo:
                         )
                         update_list.append(update_operation)
                     if update_list:
-                        MongoPool("scoreInfo_{}".format(year)).collection.bulk_write(update_list)
-                        self.logger.info(f"【{year}-{name}-{province_id}】数据插入成功，插入{len(items)}条数据")
+                        upd_result = MongoPool("scoreInfo_{}".format(year)).collection.bulk_write(update_list)
+                        return upd_result
 
             else:
                 self.logger.error(
@@ -103,7 +103,9 @@ class ScoreInfo:
         if year_and_province:
             for province_id, year_list in year_and_province.items():
                 for year in year_list:
-                    self.get_score_info(school_id, province_id, year, name)
+                    result = self.get_score_info(school_id, province_id, year, name)
+                    self.logger.info(f"【{year}-{name}-{province_id}】插入{result.modified_count}条数据")
+
             self.task_mongo_pool.collection.update_one({"school_id": school_id}, {"$set": {"status": 1}})
 
     def main(self):
