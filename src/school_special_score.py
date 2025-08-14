@@ -20,13 +20,12 @@ from lib.header import UserAgent
 from lib.mongo_pool import MongoPool
 from lib.proxies_pool import get_proxies
 from lib.base_requests import base_requests
-
+from lib.province_info import province_dict
 
 class ScoreInfo:
     def __init__(self):
         self.task_mongo_pool = MongoPool("schoolInfo")
         self.headers = {"User-Agent": UserAgent(), "Referer": HOST}
-        self.logger = get_run_logger()
 
     def get_unique_id(self, item: dict) -> str:
         temp = item["school_id"] + "_" + str(item["year"]) + "_" + item["province"] + "_" + item["special_id"] + "_" + item["type"] + "_" + item["spname"]
@@ -39,7 +38,7 @@ class ScoreInfo:
 
     def get_year_and_province(self, school_id) -> dict:
         url = "https://static-data.gaokao.cn/www/2.0/school/{}/dic/provincescore.json?a=www.gaokao.cn".format(school_id)
-        response = base_requests(url, method="GET", headers=self.headers, proxies=get_proxies())
+        response = base_requests(url, method="GET", headers=self.headers)
         data_json = json.loads(response.text)
         if data_json.get("code") == "0000":
             news_data = data_json.get("data", {}).get("newsdata", {}).get("year", {})
@@ -58,7 +57,6 @@ class ScoreInfo:
                 url,
                 method="GET",
                 headers=self.headers,
-                proxies=get_proxies(),
             )
             data_json = json.loads(response.text)
             if data_json.get("code") == "0000":
@@ -99,13 +97,15 @@ class ScoreInfo:
 
     @task(name="get_score_info", cache_policy=NO_CACHE)
     def get_score_info_by_school_id(self, school_id: str, name: str):
+        self.logger = get_run_logger()
         year_and_province = self.get_year_and_province(school_id)
         if year_and_province:
             for province_id, year_list in year_and_province.items():
                 for year in year_list:
                     result = self.get_score_info(school_id, province_id, year, name)
                     if result:
-                        self.logger.info(f"【{year}-{name}-{province_id}】插入{result.modified_count}条数据")
+                        self.logger.info(f"【{year}-{name}-{province_dict.get(province_id)}】更新{result.modified_count}条数据")
+
 
             self.task_mongo_pool.collection.update_one({"school_id": school_id}, {"$set": {"status": 1}})
 
