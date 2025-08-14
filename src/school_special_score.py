@@ -104,8 +104,7 @@ class ScoreInfo:
                 for year in year_list:
                     result = self.get_score_info(school_id, province_id, year, name)
                     if result:
-                        self.logger.info(f"【{year}-{name}-{province_dict.get(province_id)}】更新{result.modified_count}条数据")
-
+                        self.logger.info(f"【{year}-{name}-{province_dict.get(province_id)}】更新{result.upserted_count}条数据")
 
             self.task_mongo_pool.collection.update_one({"school_id": school_id}, {"$set": {"status": 1}})
 
