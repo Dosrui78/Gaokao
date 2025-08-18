@@ -1,22 +1,30 @@
 FROM python:3.13-slim
 
-# 设置工作目录
-WORKDIR /app
-
-# 复制项目文件（至少包含你的部署配置文件 my_file.yaml）
-COPY prefect.yaml .
+# 安装 git 并切换 Debian 源（slim 可能没有 /etc/apt/sources.list）
+RUN set -eux; \
+    . /etc/os-release; \
+    printf "Types: deb\nURIs: https://mirrors.tuna.tsinghua.edu.cn/debian\nSuites: %s %s-updates %s-backports\nComponents: main contrib non-free non-free-firmware\n\nTypes: deb\nURIs: https://mirrors.tuna.tsinghua.edu.cn/debian-security\nSuites: %s-security\nComponents: main contrib non-free non-free-firmware\n" "$VERSION_CODENAME" "$VERSION_CODENAME" "$VERSION_CODENAME" "$VERSION_CODENAME" > /etc/apt/sources.list.d/debian.sources; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends git ca-certificates; \
+    rm -rf /var/lib/apt/lists/*
 
 # 安装 uv
-RUN pip install uv
+RUN pip install --no-cache-dir uv
 
-# 复制 pyproject.toml
+# 使用国内镜像源（uv 与 pip 均生效）
+ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple/
+ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple/
+
+# 先复制依赖定义文件，利用缓存
+WORKDIR /app
 COPY pyproject.toml .
+COPY uv.lock .
 
-# 使用 uv 安装依赖
-RUN uv pip install --system .
+# 用 uv 按锁文件安装到系统环境
+RUN uv sync --frozen --no-dev --system
 
-# 设置环境变量（如需连接 Prefect 服务器，指定 API 地址）
-ENV PREFECT_API_URL="http://129.204.227.156:4200/api"
+# 复制项目代码
+COPY . /app
 
-# 容器启动时执行部署命令
-CMD ["sh", "-c", "prefect deploy --prefect-file prefect.yaml && prefect worker start --pool gaokao_pool"]
+# 启动命令
+CMD ["prefect", "worker", "start", "--pool", "gaokao_pool"]
