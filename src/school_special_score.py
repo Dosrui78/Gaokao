@@ -4,6 +4,7 @@ import json
 import math
 import time
 import random
+import requests
 from hashlib import md5
 from pymongo import UpdateMany
 from datetime import datetime
@@ -36,12 +37,12 @@ class ScoreInfo:
         cursor = self.task_mongo_pool.collection.find({"status": 0, "level_name" : "本科"}).limit(10)
         return list(cursor)
 
-    def get_year_and_province(self, school_id) -> dict:
+    def get_year_and_province(self, school_id) -> list:
         url = "https://static-data.gaokao.cn/www/2.0/school/{}/dic/provincescore.json?a=www.gaokao.cn".format(school_id)
         response = base_requests(url, method="GET", headers=self.headers)
         data_json = json.loads(response.text)
         if data_json.get("code") == "0000":
-            news_data = data_json.get("data", {}).get("newsdata", {}).get("year", {})
+            news_data = data_json.get("data", {}).get("data", [])
             if news_data:
                 return news_data
         else:
@@ -58,6 +59,13 @@ class ScoreInfo:
                 method="GET",
                 headers=self.headers,
             )
+            # 如果response为None，说明请求失败，base_requests已经记录了错误
+            if response is None:
+                return None
+                
+            # 检查HTTP状态码
+            response.raise_for_status()
+                
             data_json = json.loads(response.text)
             if data_json.get("code") == "0000":
                 temp_list.extend(data_json.get("data", {}).values())
@@ -90,21 +98,30 @@ class ScoreInfo:
                 self.logger.error(
                     f"{year}-{name}-{province_id}数据获取失败，报错信息：{data_json['message']}"
                 )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                self.logger.error(f"【{year}-{name}-{province_id}】 无数据")
+            else:
+                self.logger.error(f"{year}-{name}-{province_id}数据获取失败，HTTP错误：{e}")
+        except json.JSONDecodeError as e:
+            self.logger.error(f"{year}-{name}-{province_id}数据解析失败，JSON解析错误：{e}")
         except Exception as e:
-            self.logger.error(f"{year}-{name}-{province_id}数据获取失败，原因：{e}")
+            self.logger.error(f"{year}-{name}-{province_id}数据获取失败，未知错误：{e}")
         finally:
             time.sleep(random.uniform(1.1, 2.1))
 
     @task(name="get_score_info", cache_policy=NO_CACHE)
     def get_score_info_by_school_id(self, school_id: str, name: str):
         self.logger = get_run_logger()
-        year_and_province = self.get_year_and_province(school_id)
-        if year_and_province:
-            for province_id, year_list in year_and_province.items():
-                for year in year_list:
-                    result = self.get_score_info(school_id, province_id, year, name)
+        year_province_list = self.get_year_and_province(school_id)
+        if year_province_list:
+            for year_provice_dict in year_province_list:
+                year = year_provice_dict.get("year")
+                province = year_provice_dict.get("province")
+                for province_id in [i['pid'] for i in province]:
+                    result = self.get_score_info(school_id, str(province_id), year, name)
                     if result:
-                        self.logger.info(f"【{year}-{name}-{province_dict.get(province_id)}】更新{result.upserted_count}条数据")
+                        self.logger.info(f"【{year}-{name}-{province_dict.get(str(province_id))}】更新{result.upserted_count}条数据")
 
             self.task_mongo_pool.collection.update_one({"school_id": school_id}, {"$set": {"status": 1}})
 
