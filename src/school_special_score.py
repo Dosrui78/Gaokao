@@ -100,13 +100,13 @@ class ScoreInfo:
                 )
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
-                self.logger.error(f"【{year}-{name}-{province_id}】 无数据")
+                self.logger.error(f"【{year}-{name}-{province_dict.get(str(province_id))}】 无数据")
             else:
-                self.logger.error(f"{year}-{name}-{province_id}数据获取失败，HTTP错误：{e}")
+                self.logger.error(f"【{year}-{name}-{province_dict.get(str(province_id))}】数据获取失败，HTTP错误：{e}")
         except json.JSONDecodeError as e:
-            self.logger.error(f"{year}-{name}-{province_id}数据解析失败，JSON解析错误：{e}")
+            self.logger.error(f"【{year}-{name}-{province_dict.get(str(province_id))}】数据解析失败，JSON解析错误：{e}")
         except Exception as e:
-            self.logger.error(f"{year}-{name}-{province_id}数据获取失败，未知错误：{e}")
+            self.logger.error(f"【{year}-{name}-{province_dict.get(str(province_id))}】数据获取失败，未知错误：{e}")
         finally:
             time.sleep(random.uniform(1.1, 2.1))
 
