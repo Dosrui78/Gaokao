@@ -7,7 +7,9 @@ build: null
 push: null
 
 # runtime steps
-pull: null
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /app
 
 # deployment configurations
 deployments:
@@ -30,7 +32,8 @@ deployments:
     work_queue_name: gaokao
     job_variables: {}
 
-  source:
-   type: git
-   url: "https://github.com/Dosrui78/Gaokao.git"
-   reference: "main"
+  # 使用本地源而不是 Git 源
+  # source:
+  #  type: git
+  #  url: "https://github.com/Dosrui78/Gaokao.git"
+  #  reference: "main"
